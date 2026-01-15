@@ -26,11 +26,11 @@ import java.util.concurrent.CompletableFuture;
 
 public class Main extends JavaPlugin {
 
-  private Map<UUID, Set<String>> unlockedMorphs = new HashMap<>();
+  Map<UUID, Set<String>> unlockedMorphs = new HashMap<>();
   private Path dataFile;
   private final Set<Ref> processedDeaths = Collections.synchronizedSet(new HashSet<>());
   private final Timer timer = new Timer("MorphMod-Poller", true);
-  private final Set<World> pollingWorlds = Collections.synchronizedSet(new HashSet<>());
+  final Set<World> pollingWorlds = Collections.synchronizedSet(new HashSet<>());
 
   public Main(JavaPluginInit init) {
     super(init);
@@ -39,7 +39,7 @@ public class Main extends JavaPlugin {
   @Override
   protected void setup() {
     System.out.println("[MorphMod] Setup (Polling V1)");
-    getCommandRegistry().registerCommand(new MorphCommand());
+    getCommandRegistry().registerCommand(new MorphCommand(this));
     getEventRegistry().registerGlobal(PlayerConnectEvent.class, this::onPlayerConnect);
 
     try {
@@ -148,7 +148,7 @@ public class Main extends JavaPlugin {
     }
   }
 
-  private void saveData() {
+  void saveData() {
     if (dataFile == null) return;
     try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(dataFile))) {
       oos.writeObject(unlockedMorphs);
@@ -157,7 +157,7 @@ public class Main extends JavaPlugin {
     }
   }
 
-  private UUID getPlayerUUID(Player player) {
+  UUID getPlayerUUID(Player player) {
     try {
       Ref<EntityStore> ref = player.getReference();
       Store<EntityStore> store = ref.getStore();
@@ -168,89 +168,6 @@ public class Main extends JavaPlugin {
     return player.getUuid();
   }
 
-  public class MorphCommand extends AbstractCommand {
-    public MorphCommand() {
-      super("morph", "Morph commands");
-      setAllowsExtraArguments(true);
-    }
 
-    @Override
-    protected CompletableFuture<Void> execute(CommandContext ctx) {
-      if (!ctx.isPlayer()) return CompletableFuture.completedFuture(null);
-      Player player = ctx.senderAs(Player.class);
-
-      // Add world to polling if not present (e.g. if start missed it)
-      synchronized (pollingWorlds) {
-        if (pollingWorlds.add(player.getWorld())) {
-          System.out.println("[MorphMod] Added world via command: " + player.getWorld().getName());
-        }
-      }
-
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      player
-          .getWorld()
-          .execute(
-              () -> {
-                try {
-                  handle(ctx, player);
-                  future.complete(null);
-                } catch (Exception e) {
-                  e.printStackTrace();
-                  future.completeExceptionally(e);
-                }
-              });
-      return future;
-    }
-
-    private void handle(CommandContext ctx, Player player) {
-      String input = ctx.getInputString();
-      String[] args = input != null ? input.trim().split("\\s+") : new String[0];
-      int start = (args.length > 0 && args[0].equalsIgnoreCase("morph")) ? 1 : 0;
-
-      if (args.length <= start) {
-        ctx.sendMessage(Message.raw("Usage: /morph <list|unmorph|unlock|id>"));
-        return;
-      }
-
-      String cmd = args[start];
-      UUID uuid = getPlayerUUID(player);
-
-      if (cmd.equals("list")) {
-        Set<String> morphs = unlockedMorphs.getOrDefault(uuid, Collections.<String>emptySet());
-        ctx.sendMessage(Message.raw("Morphs: " + String.join(", ", morphs)));
-      } else if (cmd.equals("unmorph")) {
-        if (apply(player, "hytale:main_character")) ctx.sendMessage(Message.raw("Unmorphed."));
-        else ctx.sendMessage(Message.raw("Fail."));
-      } else if (cmd.equals("unlock") && args.length > start + 1) {
-        String id = args[start + 1];
-        unlockedMorphs.computeIfAbsent(uuid, k -> new HashSet<>()).add(id);
-        ctx.sendMessage(Message.raw("Unlocked " + id));
-        saveData();
-      } else {
-        Set<String> morphs = unlockedMorphs.getOrDefault(uuid, Collections.<String>emptySet());
-        if (morphs.contains(cmd)) {
-          if (apply(player, cmd)) ctx.sendMessage(Message.raw("Morphed into " + cmd));
-          else ctx.sendMessage(Message.raw("Failed."));
-        } else {
-          ctx.sendMessage(Message.raw("Not unlocked: " + cmd));
-        }
-      }
-    }
-
-    private boolean apply(Player player, String id) {
-      try {
-        ModelAsset asset = ModelAsset.getAssetMap().getAsset(id);
-        if (asset == null) return false;
-        Model model = Model.createUnitScaleModel(asset);
-        ModelComponent comp = new ModelComponent(model);
-        Ref<EntityStore> ref = player.getReference();
-        ref.getStore().putComponent(ref, ModelComponent.getComponentType(), comp);
-        return true;
-      } catch (Exception e) {
-        e.printStackTrace();
-        return false;
-      }
-    }
-  }
 }
 

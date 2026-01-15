@@ -1,0 +1,101 @@
+package xyz.derhalbgrieche.morphmod;
+
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.asset.type.model.config.Model;
+import com.hypixel.hytale.server.core.asset.type.model.config.ModelAsset;
+import com.hypixel.hytale.server.core.command.system.AbstractCommand;
+import com.hypixel.hytale.server.core.command.system.CommandContext;
+import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+public class MorphCommand extends AbstractCommand {
+    private final Main main;
+
+    public MorphCommand(Main main) {
+        super("morph", "Morph commands");
+        this.main = main;
+        setAllowsExtraArguments(true);
+    }
+
+    @Override
+    protected CompletableFuture<Void> execute(CommandContext ctx) {
+        if (!ctx.isPlayer()) return CompletableFuture.completedFuture(null);
+        Player player = ctx.senderAs(Player.class);
+
+        // Add world to polling if not present (e.g. if start missed it)
+        synchronized (main.pollingWorlds) {
+            if (main.pollingWorlds.add(player.getWorld())) {
+                System.out.println("[MorphMod] Added world via command: " + player.getWorld().getName());
+            }
+        }
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        player.getWorld().execute(() -> {
+            try {
+                handle(ctx, player);
+                future.complete(null);
+            } catch (Exception e) {
+                e.printStackTrace();
+                future.completeExceptionally(e);
+            }
+        });
+        return future;
+    }
+
+    private void handle(CommandContext ctx, Player player) {
+        String input = ctx.getInputString();
+        String[] args = input != null ? input.trim().split("\\s+") : new String[0];
+        int start = (args.length > 0 && args[0].equalsIgnoreCase("morph")) ? 1 : 0;
+
+        if (args.length <= start) {
+            ctx.sendMessage(Message.raw("Usage: /morph <list|unmorph|unlock|id>"));
+            return;
+        }
+
+        String cmd = args[start];
+        UUID uuid = main.getPlayerUUID(player);
+
+        if (cmd.equals("list")) {
+            Set<String> morphs = main.unlockedMorphs.getOrDefault(uuid, Collections.emptySet());
+            ctx.sendMessage(Message.raw("Morphs: " + String.join(", ", morphs)));
+        } else if (cmd.equals("unmorph")) {
+            if (apply(player, "hytale:main_character")) ctx.sendMessage(Message.raw("Unmorphed."));
+            else ctx.sendMessage(Message.raw("Fail."));
+        } else if (cmd.equals("unlock") && args.length > start + 1) {
+            String id = args[start + 1];
+            main.unlockedMorphs.computeIfAbsent(uuid, k -> new HashSet<>()).add(id);
+            ctx.sendMessage(Message.raw("Unlocked " + id));
+            main.saveData();
+        } else {
+            Set<String> morphs = main.unlockedMorphs.getOrDefault(uuid, Collections.emptySet());
+            if (morphs.contains(cmd)) {
+                if (apply(player, cmd)) ctx.sendMessage(Message.raw("Morphed into " + cmd));
+                else ctx.sendMessage(Message.raw("Failed."));
+            } else {
+                ctx.sendMessage(Message.raw("Not unlocked: " + cmd));
+            }
+        }
+    }
+
+    private boolean apply(Player player, String id) {
+        try {
+            ModelAsset asset = ModelAsset.getAssetMap().getAsset(id);
+            if (asset == null) return false;
+            Model model = Model.createUnitScaleModel(asset);
+            ModelComponent comp = new ModelComponent(model);
+            Ref<EntityStore> ref = player.getReference();
+            ref.getStore().putComponent(ref, ModelComponent.getComponentType(), comp);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+}
