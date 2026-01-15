@@ -64,31 +64,23 @@ public class MorphCommand extends AbstractCommand {
         int start = (args.length > 0 && args[0].equalsIgnoreCase("morph")) ? 1 : 0;
 
         if (args.length <= start) {
-            ctx.sendMessage(Message.raw("Usage: /morph <ui|list|unmorph|unlock|id>"));
+            openUI(player);
             return;
         }
 
         String cmd = args[start];
+        if (cmd.equalsIgnoreCase("help") || cmd.equalsIgnoreCase("--help")) {
+            ctx.sendMessage(Message.raw("Usage: /morph [ui|list|unmorph|unlock|id]"));
+            return;
+        }
+
         UUID uuid = main.getPlayerUUID(player);
 
         if (cmd.equals("list")) {
             Set<String> morphs = main.unlockedMorphs.getOrDefault(uuid, Collections.emptySet());
             ctx.sendMessage(Message.raw("Morphs: " + String.join(", ", morphs)));
         } else if (cmd.equals("ui")) {
-            Set<String> morphs = main.unlockedMorphs.getOrDefault(uuid, Collections.emptySet());
-            List<String> morphList = new ArrayList<>(morphs);
-            try {
-                Ref<EntityStore> ref = player.getReference();
-                Store<EntityStore> store = ref.getStore();
-                PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
-                
-                if (playerRef != null) {
-                   player.getPageManager().openCustomPage(ref, store, new MorphGui(main, playerRef, morphList));
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                ctx.sendMessage(Message.raw("Failed to open UI."));
-            }
+            openUI(player);
         } else if (cmd.equals("unmorph")) {
             if (apply(player, "hytale:main_character")) ctx.sendMessage(Message.raw("Unmorphed."));
             else ctx.sendMessage(Message.raw("Fail."));
@@ -105,6 +97,24 @@ public class MorphCommand extends AbstractCommand {
             } else {
                 ctx.sendMessage(Message.raw("Not unlocked: " + cmd));
             }
+        }
+    }
+
+    private void openUI(Player player) {
+        UUID uuid = main.getPlayerUUID(player);
+        Set<String> morphs = main.unlockedMorphs.getOrDefault(uuid, Collections.emptySet());
+        List<String> morphList = new ArrayList<>(morphs);
+        try {
+            Ref<EntityStore> ref = player.getReference();
+            Store<EntityStore> store = ref.getStore();
+            PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+            
+            if (playerRef != null) {
+               player.getPageManager().openCustomPage(ref, store, new MorphGui(main, playerRef, morphList));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            player.sendMessage(Message.raw("Failed to open UI."));
         }
     }
 

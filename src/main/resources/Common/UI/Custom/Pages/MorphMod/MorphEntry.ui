@@ -1,21 +1,15 @@
 Button {
-  Anchor: (Width: 120, Height: 120, Right: 10);
+  Anchor: (Height: 40, Bottom: 5);
+  FlexWeight: 1;
   Background: (Color: #444444FF);
-  LayoutMode: Top;
-
-  Group #Icon {
-    Anchor: (Top: 10, Width: 80, Height: 60);
-    LayoutMode: Left;
-    Background: (Color: #00000033);
-  }
+  LayoutMode: Left;
+  Padding: (Left: 10, Right: 10);
 
   Label #MorphName {
-    Anchor: (Bottom: 10, Left: 5, Right: 5, Height: 30);
     Text: "Unknown";
     Style: (
-      FontSize: 12,
-      TextColor: #EEEEEE,
-      Wrap: true
+      FontSize: 16,
+      TextColor: #EEEEEE
     );
   }
 }

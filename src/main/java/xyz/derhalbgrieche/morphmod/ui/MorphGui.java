@@ -38,42 +38,25 @@ public class MorphGui extends InteractiveCustomUIPage<MorphGui.MorphData> {
         uiCommandBuilder.append("Pages/MorphMod/MorphGui.ui");
 
         // Clear existing list if any
-        uiCommandBuilder.clear("#MorphGrid");
+        uiCommandBuilder.clear("#MorphList");
         
-        int itemsPerRow = 4;
-        int rowIndex = 0;
-        int colIndex = 0;
-
         // Populate the list
         for (int i = 0; i < morphs.size(); i++) {
             String morphId = morphs.get(i);
             
-            // Start a new row if needed
-            if (colIndex == 0) {
-                uiCommandBuilder.appendInline("#MorphGrid", "Group { LayoutMode: Left; Anchor: (Bottom: 10); }");
-            }
-
-            String rowPath = "#MorphGrid[" + rowIndex + "]";
+            // Append the entry layout to the list
+            uiCommandBuilder.append("#MorphList", "Pages/MorphMod/MorphEntry.ui");
             
-            // Append the entry layout to the current row
-            uiCommandBuilder.append(rowPath, "Pages/MorphMod/MorphEntry.ui");
-            
-            String entryPath = rowPath + "[" + colIndex + "]";
+            String entryPath = "#MorphList[" + i + "]";
             uiCommandBuilder.set(entryPath + " #MorphName.Text", morphId);
             
-            // Add click event to the whole entry group
+            // Add click event to the button
             uiEventBuilder.addEventBinding(
                 CustomUIEventBindingType.Activating, 
                 entryPath, 
                 EventData.of("MorphId", morphId), 
                 false
             );
-            
-            colIndex++;
-            if (colIndex >= itemsPerRow) {
-                colIndex = 0;
-                rowIndex++;
-            }
         }
     }
 
