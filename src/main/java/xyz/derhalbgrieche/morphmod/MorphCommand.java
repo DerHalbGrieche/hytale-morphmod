@@ -2,6 +2,7 @@ package xyz.derhalbgrieche.morphmod;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.protocol.GameMode;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.model.config.Model;
 import com.hypixel.hytale.server.core.asset.type.model.config.ModelAsset;
@@ -27,6 +28,7 @@ public class MorphCommand extends AbstractCommand {
         super("morph", "Morph commands");
         this.main = main;
         setAllowsExtraArguments(true);
+        setPermissionGroup(GameMode.Adventure);
     }
 
     @Override
@@ -85,6 +87,10 @@ public class MorphCommand extends AbstractCommand {
             if (apply(player, "hytale:main_character")) ctx.sendMessage(Message.raw("Unmorphed."));
             else ctx.sendMessage(Message.raw("Fail."));
         } else if (cmd.equals("unlock") && args.length > start + 1) {
+            if (!player.hasPermission("morph.unlock")) {
+                ctx.sendMessage(Message.raw("You do not have permission to use this command."));
+                return;
+            }
             String id = args[start + 1];
             main.unlockedMorphs.computeIfAbsent(uuid, k -> new HashSet<>()).add(id);
             ctx.sendMessage(Message.raw("Unlocked " + id));
