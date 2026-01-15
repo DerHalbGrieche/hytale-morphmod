@@ -23,7 +23,7 @@ $C.@PageOverlay {
         Padding: (Full: 10);
 
         Group #MorphGrid {
-          LayoutMode: Left;
+          LayoutMode: Top;
         }
       }
     }

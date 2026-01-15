@@ -1,5 +1,5 @@
 Button {
-  Anchor: (Width: 120, Height: 120, Right: 10, Bottom: 10);
+  Anchor: (Width: 120, Height: 120, Right: 10);
   Background: (Color: #444444FF);
   LayoutMode: Top;
 
