@@ -2,6 +2,12 @@
        "Group": "xyz.derhalbgrieche",
        "Name": "morphmod",
        "Version": "1.0.0",
+       "Description": "A mod that allows players to morph into killed entities.",
+       "Authors": [
+              {
+                     "Name": "DerHalbGrieche"
+              }
+       ],
        "Main": "xyz.derhalbgrieche.morphmod.Main",
        "IncludesAssetPack": true
 }
