@@ -1,0 +1,33 @@
+$C = "../../Common.ui";
+
+$C.@PageOverlay {
+
+  $C.@Container {
+    Anchor: (Width: 600, Height: 500);
+
+    #Title {
+      Group {
+        $C.@Title {
+          @Text = "Morph Selection";
+        }
+      }
+    }
+
+    #Content {
+      LayoutMode: Left;
+
+      Group #MorphListContainer {
+        Anchor: (Top: 60, Bottom: 20, Left: 20, Right: 20);
+        LayoutMode: TopScrolling;
+        Background: (Color: #00000055);
+        Padding: (Full: 10);
+
+        Group #MorphGrid {
+          LayoutMode: Left;
+        }
+      }
+    }
+  }
+}
+
+$C.@BackButton {}

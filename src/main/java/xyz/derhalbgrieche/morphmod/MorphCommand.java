@@ -1,6 +1,7 @@
 package xyz.derhalbgrieche.morphmod;
 
 import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.asset.type.model.config.Model;
 import com.hypixel.hytale.server.core.asset.type.model.config.ModelAsset;
@@ -8,9 +9,13 @@ import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import xyz.derhalbgrieche.morphmod.ui.MorphGui;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -28,6 +33,10 @@ public class MorphCommand extends AbstractCommand {
     protected CompletableFuture<Void> execute(CommandContext ctx) {
         if (!ctx.isPlayer()) return CompletableFuture.completedFuture(null);
         Player player = ctx.senderAs(Player.class);
+
+        if (player.getWorld() == null) {
+            return CompletableFuture.completedFuture(null);
+        }
 
         // Add world to polling if not present (e.g. if start missed it)
         synchronized (main.pollingWorlds) {
@@ -55,7 +64,7 @@ public class MorphCommand extends AbstractCommand {
         int start = (args.length > 0 && args[0].equalsIgnoreCase("morph")) ? 1 : 0;
 
         if (args.length <= start) {
-            ctx.sendMessage(Message.raw("Usage: /morph <list|unmorph|unlock|id>"));
+            ctx.sendMessage(Message.raw("Usage: /morph <ui|list|unmorph|unlock|id>"));
             return;
         }
 
@@ -65,6 +74,21 @@ public class MorphCommand extends AbstractCommand {
         if (cmd.equals("list")) {
             Set<String> morphs = main.unlockedMorphs.getOrDefault(uuid, Collections.emptySet());
             ctx.sendMessage(Message.raw("Morphs: " + String.join(", ", morphs)));
+        } else if (cmd.equals("ui")) {
+            Set<String> morphs = main.unlockedMorphs.getOrDefault(uuid, Collections.emptySet());
+            List<String> morphList = new ArrayList<>(morphs);
+            try {
+                Ref<EntityStore> ref = player.getReference();
+                Store<EntityStore> store = ref.getStore();
+                PlayerRef playerRef = store.getComponent(ref, PlayerRef.getComponentType());
+                
+                if (playerRef != null) {
+                   player.getPageManager().openCustomPage(ref, store, new MorphGui(main, playerRef, morphList));
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                ctx.sendMessage(Message.raw("Failed to open UI."));
+            }
         } else if (cmd.equals("unmorph")) {
             if (apply(player, "hytale:main_character")) ctx.sendMessage(Message.raw("Unmorphed."));
             else ctx.sendMessage(Message.raw("Fail."));

@@ -2,5 +2,6 @@
        "Group": "xyz.derhalbgrieche",
        "Name": "morphmod",
        "Version": "1.0.0",
-       "Main": "xyz.derhalbgrieche.morphmod.Main"
+       "Main": "xyz.derhalbgrieche.morphmod.Main",
+       "IncludesAssetPack": true
 }
