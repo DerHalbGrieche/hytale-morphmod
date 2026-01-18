@@ -10,6 +10,8 @@ import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
+import com.hypixel.hytale.server.core.modules.entity.player.PlayerSkinComponent;
+import com.hypixel.hytale.server.core.modules.entity.tracker.EntityTrackerSystems;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import xyz.derhalbgrieche.morphmod.ui.MorphGui;
@@ -84,8 +86,27 @@ public class MorphCommand extends AbstractCommand {
         } else if (cmd.equals("ui")) {
             openUI(player);
         } else if (cmd.equals("unmorph")) {
-            if (apply(player, "hytale:main_character")) ctx.sendMessage(Message.raw("Unmorphed."));
-            else ctx.sendMessage(Message.raw("Fail."));
+            main.unmorphPlayer(player);
+        } else if (cmd.equals("test") && args.length > start + 1) {
+             String id = args[start + 1];
+             if (apply(player, id)) ctx.sendMessage(Message.raw("Applied " + id));
+             else ctx.sendMessage(Message.raw("Failed to apply " + id));
+        } else if (cmd.equals("debug")) {
+             try {
+                 Ref<EntityStore> ref = player.getReference();
+                 boolean hasModel = ref.getStore().getComponent(ref, ModelComponent.getComponentType()) != null;
+                 boolean hasSkin = ref.getStore().getComponent(ref, PlayerSkinComponent.getComponentType()) != null;
+                 ctx.sendMessage(Message.raw("Has ModelComponent: " + hasModel));
+                 ctx.sendMessage(Message.raw("Has PlayerSkinComponent: " + hasSkin));
+                 
+                 ctx.sendMessage(Message.raw("Skin Methods:"));
+                 for (java.lang.reflect.Method m : PlayerSkinComponent.class.getDeclaredMethods()) {
+                     ctx.sendMessage(Message.raw("- " + m.getName()));
+                 }
+
+             } catch (Exception e) {
+                 ctx.sendMessage(Message.raw("Debug fail: " + e.getMessage()));
+             }
         } else if (cmd.equals("unlock") && args.length > start + 1) {
             if (!player.hasPermission("morph.unlock")) {
                 ctx.sendMessage(Message.raw("You do not have permission to use this command."));

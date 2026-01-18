@@ -9,6 +9,7 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.asset.type.model.config.Model;
 import com.hypixel.hytale.server.core.asset.type.model.config.ModelAsset;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
@@ -40,6 +41,17 @@ public class MorphGui extends InteractiveCustomUIPage<MorphGui.MorphData> {
         // Clear existing list if any
         uiCommandBuilder.clear("#MorphList");
         
+        // Add Unmorph button first
+        uiCommandBuilder.append("#MorphList", "Pages/MorphMod/MorphEntry.ui");
+        String unmorphPath = "#MorphList[0]";
+        uiCommandBuilder.set(unmorphPath + " #MorphName.Text", "Unmorph");
+        uiEventBuilder.addEventBinding(
+            CustomUIEventBindingType.Activating, 
+            unmorphPath, 
+            EventData.of("MorphId", "unmorph"), 
+            false
+        );
+
         // Populate the list
         for (int i = 0; i < morphs.size(); i++) {
             String morphId = morphs.get(i);
@@ -47,7 +59,8 @@ public class MorphGui extends InteractiveCustomUIPage<MorphGui.MorphData> {
             // Append the entry layout to the list
             uiCommandBuilder.append("#MorphList", "Pages/MorphMod/MorphEntry.ui");
             
-            String entryPath = "#MorphList[" + i + "]";
+            // Index + 1 because of Unmorph button
+            String entryPath = "#MorphList[" + (i + 1) + "]";
             uiCommandBuilder.set(entryPath + " #MorphName.Text", morphId);
             
             // Add click event to the button
@@ -63,7 +76,14 @@ public class MorphGui extends InteractiveCustomUIPage<MorphGui.MorphData> {
     @Override
     public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull MorphData data) {
         if (data.morphId != null) {
-            applyMorph(ref, data.morphId);
+            if (data.morphId.equals("unmorph")) {
+                Player player = store.getComponent(ref, Player.getComponentType());
+                if (player != null) {
+                    main.unmorphPlayer(player);
+                }
+            } else {
+                applyMorph(ref, data.morphId);
+            }
             this.close(); 
         }
     }

@@ -13,6 +13,7 @@ import com.hypixel.hytale.server.core.event.events.player.PlayerConnectEvent;
 import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
 import com.hypixel.hytale.server.core.modules.entity.damage.Damage;
 import com.hypixel.hytale.server.core.modules.entity.damage.DeathComponent;
+import com.hypixel.hytale.server.core.modules.entity.player.PlayerSkinComponent;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
@@ -50,6 +51,58 @@ public class Main extends JavaPlugin {
     } catch (IOException e) {
       e.printStackTrace();
     }
+  }
+
+  public void unmorphPlayer(Player player) {
+      try {
+          if (applyModel(player, "player")) {
+              java.util.concurrent.CompletableFuture.delayedExecutor(500, java.util.concurrent.TimeUnit.MILLISECONDS).execute(() -> {
+                  if (player.getWorld() != null) {
+                      player.getWorld().execute(() -> {
+                          try {
+                              Ref<EntityStore> ref = player.getReference();
+                              if (ref.getStore().getComponent(ref, ModelComponent.getComponentType()) != null) {
+                                  ref.getStore().removeComponent(ref, ModelComponent.getComponentType());
+                              }
+                              PlayerSkinComponent skin = ref.getStore().getComponent(ref, PlayerSkinComponent.getComponentType());
+                              if (skin != null) {
+                                  skin.setNetworkOutdated();
+                                  ref.getStore().putComponent(ref, PlayerSkinComponent.getComponentType(), skin);
+                              }
+                          } catch (Exception ex) {
+                              ex.printStackTrace();
+                          }
+                      });
+                  }
+              });
+              player.sendMessage(Message.raw("Unmorphing..."));
+          } else {
+              // Fallback
+              Ref<EntityStore> ref = player.getReference();
+              if (ref.getStore().getComponent(ref, ModelComponent.getComponentType()) != null) {
+                  ref.getStore().removeComponent(ref, ModelComponent.getComponentType());
+              }
+              player.sendMessage(Message.raw("Unmorphed (Fallback)."));
+          }
+      } catch (Exception e) {
+          e.printStackTrace();
+          player.sendMessage(Message.raw("Unmorph Failed: " + e.getMessage()));
+      }
+  }
+
+  public boolean applyModel(Player player, String id) {
+      try {
+          ModelAsset asset = ModelAsset.getAssetMap().getAsset(id);
+          if (asset == null) return false;
+          Model model = Model.createUnitScaleModel(asset);
+          ModelComponent comp = new ModelComponent(model);
+          Ref<EntityStore> ref = player.getReference();
+          ref.getStore().putComponent(ref, ModelComponent.getComponentType(), comp);
+          return true;
+      } catch (Exception e) {
+          e.printStackTrace();
+          return false;
+      }
   }
 
   @Override
