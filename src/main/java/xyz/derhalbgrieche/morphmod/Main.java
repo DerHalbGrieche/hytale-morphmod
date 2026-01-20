@@ -9,6 +9,7 @@ import com.hypixel.hytale.server.core.asset.type.model.config.ModelAsset;
 import com.hypixel.hytale.server.core.command.system.AbstractCommand;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.event.events.player.AddPlayerToWorldEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerConnectEvent;
 import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
 import com.hypixel.hytale.server.core.modules.entity.damage.Damage;
@@ -42,6 +43,7 @@ public class Main extends JavaPlugin {
     System.out.println("[MorphMod] Setup (Polling V1)");
     getCommandRegistry().registerCommand(new MorphCommand(this));
     getEventRegistry().registerGlobal(PlayerConnectEvent.class, this::onPlayerConnect);
+    getEventRegistry().registerGlobal(AddPlayerToWorldEvent.class, this::onAddPlayerToWorld);
 
     try {
       Path dataDir = getDataDirectory();
@@ -140,6 +142,13 @@ public class Main extends JavaPlugin {
       if (world != null && pollingWorlds.add(world)) {
         System.out.println("[MorphMod] Started polling for world: " + world.getName());
       }
+    }
+  }
+
+  private void onAddPlayerToWorld(AddPlayerToWorldEvent event) {
+    World world = event.getWorld();
+    if (world != null && pollingWorlds.add(world)) {
+      System.out.println("[MorphMod] Started polling for world (AddPlayerToWorld): " + world.getName());
     }
   }
 
