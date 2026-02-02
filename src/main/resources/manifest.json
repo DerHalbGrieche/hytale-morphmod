@@ -1,7 +1,7 @@
 {
        "Group": "xyz.derhalbgrieche",
        "Name": "morphmod",
-       "Version": "1.2.0",
+       "Version": "1.2.1",
        "Description": "A mod that allows players to morph into killed entities.",
        "Authors": [
               {
