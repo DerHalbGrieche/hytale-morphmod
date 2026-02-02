@@ -8,7 +8,7 @@ plugins {
     `java-library` // Wir bauen eine Library (Mod)
 }
 
-version = "1.2.0"
+version = "1.2.1"
 
 repositories {
     mavenCentral()
