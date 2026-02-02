@@ -57,34 +57,19 @@ public class Main extends JavaPlugin {
 
   public void unmorphPlayer(Player player) {
       try {
+          // Apply the default "player" model without removing the ModelComponent
+          // Removing the ModelComponent causes NPE in the interaction system
           if (applyModel(player, "player")) {
-              java.util.concurrent.CompletableFuture.delayedExecutor(500, java.util.concurrent.TimeUnit.MILLISECONDS).execute(() -> {
-                  if (player.getWorld() != null) {
-                      player.getWorld().execute(() -> {
-                          try {
-                              Ref<EntityStore> ref = player.getReference();
-                              if (ref.getStore().getComponent(ref, ModelComponent.getComponentType()) != null) {
-                                  ref.getStore().removeComponent(ref, ModelComponent.getComponentType());
-                              }
-                              PlayerSkinComponent skin = ref.getStore().getComponent(ref, PlayerSkinComponent.getComponentType());
-                              if (skin != null) {
-                                  skin.setNetworkOutdated();
-                                  ref.getStore().putComponent(ref, PlayerSkinComponent.getComponentType(), skin);
-                              }
-                          } catch (Exception ex) {
-                              ex.printStackTrace();
-                          }
-                      });
-                  }
-              });
-              player.sendMessage(Message.raw("Unmorphing..."));
-          } else {
-              // Fallback
+              // Refresh the PlayerSkinComponent to restore the player's custom skin
               Ref<EntityStore> ref = player.getReference();
-              if (ref.getStore().getComponent(ref, ModelComponent.getComponentType()) != null) {
-                  ref.getStore().removeComponent(ref, ModelComponent.getComponentType());
+              PlayerSkinComponent skin = ref.getStore().getComponent(ref, PlayerSkinComponent.getComponentType());
+              if (skin != null) {
+                  skin.setNetworkOutdated();
+                  ref.getStore().putComponent(ref, PlayerSkinComponent.getComponentType(), skin);
               }
-              player.sendMessage(Message.raw("Unmorphed (Fallback)."));
+              player.sendMessage(Message.raw("Unmorphed successfully."));
+          } else {
+              player.sendMessage(Message.raw("Failed to unmorph: player model not found."));
           }
       } catch (Exception e) {
           e.printStackTrace();
